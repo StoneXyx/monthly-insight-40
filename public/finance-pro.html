@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinanceTrack Pro - Gestão Financeira Profissional</title>
+  <meta name="description" content="Sistema profissional de gestão financeira com análises, comparações e relatórios mensais em PDF">
+  <link rel="stylesheet" href="./finance-pro.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js para gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  
+  <!-- jsPDF para geração de PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.0/jspdf.plugin.autotable.min.js"></script>
+</head>
+
+<body>
+  <header>
+    <div class="container">
+      <h1>💰 FinanceTrack Pro</h1>
+      <p class="subtitle">Gestão Financeira Profissional</p>
+    </div>
+  </header>
+
+  <main class="container">
+    
+    <!-- Seção de Filtros -->
+    <section id="filters" class="filters-section">
+      <div class="filter-group">
+        <label for="monthFilter">📅 Mês:</label>
+        <input type="month" id="monthFilter" value="">
+      </div>
+      
+      <div class="filter-group">
+        <label for="categoryFilter">🏷️ Categoria:</label>
+        <select id="categoryFilter">
+          <option value="all">Todas</option>
+          <option value="Salário">Salário</option>
+          <option value="Freelance">Freelance</option>
+          <option value="Dividendos">Dividendos</option>
+          <option value="Moradia">Aluguel/Moradia</option>
+          <option value="Vestuário">Vestuário</option>
+          <option value="Utilitários">Utilitários</option>
+          <option value="Refeições">Refeições</option>
+          <option value="Transporte">Transporte</option>
+          <option value="Saúde">Saúde</option>
+          <option value="Educação">Educação</option>
+          <option value="Lazer">Lazer</option>
+          <option value="Outros">Outros</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label for="groupFilter">👥 Grupo:</label>
+        <select id="groupFilter">
+          <option value="all">Todos</option>
+          <option value="Pessoal">Pessoal</option>
+          <option value="Negócios">Negócios</option>
+          <option value="Família">Família</option>
+          <option value="Investimentos">Investimentos</option>
+        </select>
+      </div>
+      
+      <div class="filter-actions">
+        <button class="btn-primary" onclick="Modal.open()">+ Nova Transação</button>
+        <button class="btn-secondary" onclick="PDF.generate()">📄 Baixar PDF</button>
+      </div>
+    </section>
+
+    <!-- Cards de Resumo -->
+    <section id="balance">
+      <div class="card card-income">
+        <div class="card-header">
+          <h3>Entradas</h3>
+          <span class="icon">📈</span>
+        </div>
+        <p class="card-value" id="incomeDisplay">R$ 0,00</p>
+        <small class="card-detail" id="incomeCount">0 transações</small>
+      </div>
+
+      <div class="card card-expense">
+        <div class="card-header">
+          <h3>Saídas</h3>
+          <span class="icon">📉</span>
+        </div>
+        <p class="card-value" id="expenseDisplay">R$ 0,00</p>
+        <small class="card-detail" id="expenseCount">0 transações</small>
+      </div>
+
+      <div class="card card-total">
+        <div class="card-header">
+          <h3>Total</h3>
+          <span class="icon">💵</span>
+        </div>
+        <p class="card-value" id="totalDisplay">R$ 0,00</p>
+        <small class="card-detail" id="totalGroups">0 grupos ativos</small>
+      </div>
+
+      <div class="card card-average">
+        <div class="card-header">
+          <h3>Média</h3>
+          <span class="icon">📊</span>
+        </div>
+        <p class="card-value" id="averageDisplay">R$ 0,00</p>
+        <small class="card-detail">por transação</small>
+      </div>
+    </section>
+
+    <!-- Gráficos Analytics -->
+    <section id="analytics">
+      <div class="chart-card">
+        <h3>📊 Receitas por Categoria</h3>
+        <div class="chart-container">
+          <canvas id="incomeChart"></canvas>
+        </div>
+      </div>
+      
+      <div class="chart-card">
+        <h3>📊 Despesas por Categoria</h3>
+        <div class="chart-container">
+          <canvas id="expenseChart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card full-width">
+        <h3>📈 Evolução Mensal</h3>
+        <div class="chart-container">
+          <canvas id="evolutionChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabela de Transações -->
+    <section id="transaction">
+      <h2>📋 Transações</h2>
+      <div class="table-container">
+        <table id="data-table">
+          <thead>
+            <tr>
+              <th>Descrição</th>
+              <th>Categoria</th>
+              <th>Grupo</th>
+              <th>Valor</th>
+              <th>Data</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal de Nova Transação -->
+  <div class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Nova Transação</h2>
+        <button class="modal-close" onclick="Modal.close()">✕</button>
+      </div>
+      
+      <form onsubmit="Form.submit(event)">
+        <div class="input-group">
+          <label for="description">📝 Descrição</label>
+          <input type="text" id="description" name="description" placeholder="Ex: Salário do mês" required>
+        </div>
+
+        <div class="input-row">
+          <div class="input-group">
+            <label for="amount">💰 Valor</label>
+            <input type="number" step="0.01" id="amount" name="amount" placeholder="0,00" required>
+            <small>Use o sinal - (negativo) para despesas</small>
+          </div>
+
+          <div class="input-group">
+            <label for="date">📅 Data</label>
+            <input type="date" id="date" name="date" required>
+          </div>
+        </div>
+
+        <div class="input-row">
+          <div class="input-group">
+            <label for="category">🏷️ Categoria</label>
+            <select id="category" name="category" required>
+              <option value="">Selecione...</option>
+              <option value="Salário">Salário</option>
+              <option value="Freelance">Freelance</option>
+              <option value="Dividendos">Dividendos</option>
+              <option value="Moradia">Aluguel/Moradia</option>
+              <option value="Vestuário">Vestuário</option>
+              <option value="Utilitários">Utilitários</option>
+              <option value="Refeições">Refeições</option>
+              <option value="Transporte">Transporte</option>
+              <option value="Saúde">Saúde</option>
+              <option value="Educação">Educação</option>
+              <option value="Lazer">Lazer</option>
+              <option value="Outros">Outros</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label for="group">👥 Grupo</label>
+            <select id="group" name="group" required>
+              <option value="">Selecione...</option>
+              <option value="Pessoal">Pessoal</option>
+              <option value="Negócios">Negócios</option>
+              <option value="Família">Família</option>
+              <option value="Investimentos">Investimentos</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="Modal.close()">Cancelar</button>
+          <button type="submit" class="btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    <p>💰 FinanceTrack Pro - Sistema Profissional de Gestão Financeira</p>
+  </footer>
+
+  <script src="./finance-pro.js"></script>
+</body>
+</html>
